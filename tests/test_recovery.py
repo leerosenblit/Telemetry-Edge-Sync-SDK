@@ -24,7 +24,7 @@ def test_data_survives_process_restart(server, flaky_network, tmp_path):
     )
     N = 150
     for i in range(N):
-        sdk_a.track("speed", float(i), ts=5_000_000 + i)
+        sdk_a.track("mms_rpm", float(i), ts=5_000_000 + i)
     sdk_a.close()                                    # simulate the process ending
 
     assert read_metrics(server) == []                # nothing was ever sent

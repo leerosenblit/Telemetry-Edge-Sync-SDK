@@ -25,7 +25,7 @@ def test_no_loss_across_network_drop(server, flaky_network, tmp_path):
 
     N = 200
     for i in range(N):
-        sdk.track("speed", float(i), ts=1_000_000 + i)
+        sdk.track("mms_rpm", float(i), ts=1_000_000 + i)
 
     time.sleep(0.5)                                  # let the batcher try & fail
     assert read_metrics(server) == []                # nothing got through
@@ -53,7 +53,7 @@ def test_idempotent_on_lost_acknowledgement(server, flaky_network, tmp_path):
 
     N = 20
     for i in range(N):
-        sdk.track("speed", float(i), ts=2_000_000 + i)
+        sdk.track("mms_rpm", float(i), ts=2_000_000 + i)
 
     time.sleep(0.4)                                  # some batches reach server,
                                                      # but every ack is "lost"

@@ -1,43 +1,52 @@
-"""End-to-end demo: run the simulated sensor through the SDK to a live server.
+"""Minimal integration example — how SolarRace-OS feeds the SDK.
 
-Usage (two terminals):
-    uvicorn server.main:app --reload      # terminal 1
-    python demo.py                        # terminal 2
+This mirrors what you'd add to the Pi's main loop: initialise the SDK once, then
+hand each decoded `vehicle_state` to `track_vehicle_state()` instead of pushing
+it fire-and-forget. Run the server first (`uvicorn server.main:app` or
+`python run.py` in another terminal), then `python demo.py`.
 
-Then open dashboard/index.html in a browser to watch the data arrive. To see
-the resilience guarantee, stop the server mid-run and restart it: the SDK keeps
-buffering and drains the backlog in order once the server is back.
+It builds a couple of sample `vehicle_state` snapshots by hand so you can see the
+exact integration without any CAN hardware.
 """
 
 import time
 
-from sdk.client import Client
-from sdk.sensors import SimulatedSensor
+from sdk.client import init, force_flush
+from sdk.integrations.solar_race import track_vehicle_state
 
 SERVER = "http://localhost:8000"
-API_KEY = "dev-key"
-DEVICE = "car-01"
 
 
 def main():
-    sdk = Client(
-        SERVER, API_KEY, DEVICE,
-        metadata={"fw": "1.2.0", "type": "solar-car"},
-        db_path="sdk_outbox.db",
-    )
-    sensor = SimulatedSensor(sdk, metrics=("speed", "temperature"), hz=5).start()
-    print(f"Streaming telemetry as '{DEVICE}' to {SERVER} -- Ctrl+C to stop.")
-    try:
-        while True:
-            time.sleep(2)
-            print(f"  queued (unsent): {sdk.queue.unsent_count()}")
-    except KeyboardInterrupt:
-        print("\nStopping; flushing remaining points...")
-    finally:
-        sensor.stop()
-        sdk.force_flush(timeout=10)
-        sdk.close()
-        print("Done.")
+    # 1. Once, at startup.
+    init(SERVER, api_key="dev-key", device_id="solar-car-01",
+         metadata={"fw": "RaceOS-2.0", "type": "solar-car"}, network="lte")
+
+    # 2. Each time the Pi decodes a frame and updates vehicle_state, hand it over.
+    #    (Here we fake two snapshots; on the car this is your live dict.)
+    snapshots = [
+        {
+            "battery": {"bms_voltage_V": 108.4, "bms_current_A": 22.1, "bms_soc_percent": 76,
+                        "bms_temp_1_C": 47.2},
+            "motor": {"mms_rpm": 3120, "mms_power_W": 1840, "mms_temperature_C": 71},
+            "temp_controller": {"battery_temp_C": 46, "battery_temp_high_C": 49},
+        },
+        {
+            "battery": {"bms_voltage_V": 107.9, "bms_current_A": 25.3, "bms_soc_percent": 74,
+                        "bms_temp_1_C": 51.0},                       # trips a critical alert
+            "motor": {"mms_rpm": 3340, "mms_power_W": 1990, "mms_temperature_C": 83},  # warning
+            "temp_controller": {"battery_temp_C": 44, "battery_temp_high_C": 47},
+        },
+    ]
+
+    for state in snapshots:
+        n = track_vehicle_state(state)
+        print(f"tracked {n} signals")
+        time.sleep(1)
+
+    # 3. Before shutdown, make sure everything is synced.
+    force_flush()
+    print("done — open the portal to see the data and alerts")
 
 
 if __name__ == "__main__":

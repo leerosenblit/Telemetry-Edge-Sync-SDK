@@ -1,10 +1,10 @@
 # Telemetry & Edge-Sync SDK — Architecture
 
-A resilient telemetry SDK for connectivity-constrained edge devices, with a reference
-implementation in Python targeting Raspberry Pi-class (Linux) devices. It buffers sensor
-data locally, batches it, and syncs it to a REST server reliably even across network
-dropouts. The design is device-agnostic (any HTTP-capable device) and backend-agnostic
-(talks plain REST, so the backend is swappable).
+A resilient telemetry SDK for the Raspberry Pi on a solar race car (Python, Linux). It
+buffers the car's telemetry — BMS, motor controller (MMS), and battery-temperature
+controller — locally, batches it, and syncs it to a REST server reliably even across
+network dropouts (tunnels, the far side of the track, weak cell coverage). It speaks
+plain REST, so it syncs to our own server rather than a locked-in third-party backend.
 
 ---
 
@@ -21,8 +21,8 @@ to this sentence — every component and every design decision is in service of 
 
 ```
   ┌─────────────────────────────┐   POST    ┌──────────────────────────┐   GET    ┌────────────────────┐
-  │          Edge SDK           │  batch    │     REST API server      │  query   │     Dashboard      │
-  │   (Pi / any HTTP device)    │ ───────►  │        (FastAPI)         │ ◄──────  │   (web + chart)    │
+  │          Edge SDK           │  batch    │     REST API server      │  query   │  Pit-wall Dashboard │
+  │  (Raspberry Pi on the car)  │ ───────►  │        (FastAPI)         │ ◄──────  │   (web + chart)    │
   └─────────────────────────────┘           └──────────────────────────┘          └────────────────────┘
         buffers + batches                       ingests + stores                      reads + visualizes
 ```
@@ -34,8 +34,8 @@ dropouts) and in the middle (ingesting without duplicates and in order).
 
 ## Component 1 — Edge SDK
 
-A small Python library that runs on the device. Its job: accept telemetry from the
-application and get it to the server reliably, no matter the network.
+A small Python library that runs on the car's Raspberry Pi. Its job: accept telemetry
+from the car's control software and get it to the server reliably, no matter the network.
 
 **Public API (what the developer using your SDK calls):**
 
@@ -57,11 +57,13 @@ application and get it to the server reliably, no matter the network.
    after the server acknowledges. So if the connection drops, the backlog drains in
    chronological order the moment it returns. Failed sends retry with backoff.
 
-**Generality lives here.** The pipeline never knows what the data *means* — `track()`
-takes a generic `metric / value / timestamp`. Device-specific sensor reading lives in a
-separate **sensor adapter** that simply calls `track()`. Swap the adapter, and the same
-SDK serves any device. (For development, a simulated sensor adapter generates fake data
-so you never depend on real hardware.)
+**Clean separation lives here.** The pipeline never knows what the data *means* —
+`track()` takes a generic `metric / value / timestamp`. The solar-car-specific layer is
+isolated in `sdk/integrations/solar_race.py`: the Pi already decodes the CAN bus into a
+`vehicle_state` dict (BMS / motor / battery-temp), and `track_vehicle_state()` hands each
+numeric signal to `track()`. So the car's subsystems plug in through one small file,
+while the durability pipeline stays untouched. (For development off-car, a simulated
+solar car generates realistic telemetry so you never depend on hardware.)
 
 ---
 
@@ -107,9 +109,9 @@ exists to *show* that the pipeline works, not to be a product.
 
 ```json
 {
-  "id": "car-01-000042-1718900000123",
-  "metric": "speed",
-  "value": 45.2,
+  "id": "solar-car-01-000042-1718900000123",
+  "metric": "battery_temp_C",
+  "value": 46.2,
   "ts": 1718900000123
 }
 ```
@@ -121,8 +123,8 @@ idempotent ingestion. `ts` is the device timestamp in epoch milliseconds.
 
 ```json
 {
-  "device_id": "car-01",
-  "metadata": { "fw": "1.2.0", "type": "solar-car" },
+  "device_id": "solar-car-01",
+  "metadata": { "fw": "RaceOS-2.0", "type": "solar-car", "network": "lte" },
   "points": [ { "...point..." }, { "...point..." } ]
 }
 ```
@@ -162,10 +164,11 @@ CREATE TABLE telemetry (
    storing by device time (not arrival time) means buffered data slots into history
    correctly, with no time distortion in the graphs.
 
-5. **REST as the boundary = full generality.** Because the SDK speaks plain HTTP rather
-   than a proprietary backend SDK, it is both device-agnostic (anything that can make an
-   HTTP request) and backend-agnostic (this server today, a different one tomorrow). The
-   REST contract *is* the generalization boundary.
+5. **REST as the boundary = our own backend, no lock-in.** Because the SDK speaks plain
+   HTTP rather than a proprietary backend SDK (the car previously pushed straight to
+   Firebase), the car syncs to *our* server — no third-party dependency or service-account
+   key on the car, and the backend can change without touching the car. The REST contract
+   is the clean boundary between the car and whatever stores its telemetry.
 
 ---
 
@@ -197,12 +200,12 @@ correct time order, with nothing lost.
 Deliberately out of scope to keep the project finishable solo, and framed as future work
 in the write-up:
 
-- Native mobile SDKs (Android/iOS) — would require Kotlin/Swift.
 - Message broker (Kafka/RabbitMQ) — an in-process queue replaces it.
 - Time-series database — a plain table with a timestamp column is enough at this scale.
 - Protobuf — gzipped JSON is sufficient.
 - WebSocket live push — the dashboard polls instead.
-- Server-side alert rule engine.
 
-Optional stretch goals, on-theme for a cellular course: cellular-aware sync policy
-(read modem signal/network type and adapt batch size and frequency), and one alert rule.
+Implemented stretch goals (on-theme for a cellular course): a network-aware sync policy
+(adapt batch size and frequency to link type and battery) and a server-side alert rule
+engine (threshold rules over the car's signals, editable from the pit dashboard).
+See FUTURE_WORK.md for the full implemented-vs-deferred breakdown.

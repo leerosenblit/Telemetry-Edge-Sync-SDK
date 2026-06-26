@@ -14,7 +14,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 API_KEY = "dev-key"
-DEVICE = "car-01"
+DEVICE = "solar-car-01"
 
 
 @pytest.fixture

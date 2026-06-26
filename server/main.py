@@ -1,6 +1,6 @@
 """REST API server for the Telemetry & Edge-Sync SDK.
 
-Receives batches from edge devices, stores them durably in SQLite, and serves
+Receives batches from the car's Raspberry Pi, stores them durably in SQLite, and serves
 them back for the dashboard. The two correctness properties that matter:
 
   * Idempotent ingestion  -- points are upserted on their client-assigned id, so
@@ -37,14 +37,14 @@ DASHBOARD = Path(__file__).resolve().parent.parent / "dashboard" / "index.html"
 # Rules live in the DB so the portal can edit them at runtime (no restart). The
 # table is seeded with these defaults the first time it's created.
 DEFAULT_RULES = [
-    {"metric": "temperature", "op": ">", "threshold": 45, "severity": "critical",
-     "message": "Battery temperature over 45°C"},
-    {"metric": "battery", "op": "<", "threshold": 20, "severity": "warning",
-     "message": "Low battery"},
-    {"metric": "heart_rate", "op": ">", "threshold": 120, "severity": "critical",
-     "message": "Elevated heart rate"},
-    {"metric": "spo2", "op": "<", "threshold": 92, "severity": "warning",
-     "message": "Low blood-oxygen (SpO₂)"},
+    {"metric": "battery_temp_C", "op": ">", "threshold": 45, "severity": "critical",
+     "message": "Pack temperature over 45°C"},
+    {"metric": "bms_temp_1_C", "op": ">", "threshold": 50, "severity": "critical",
+     "message": "BMS probe over-temperature"},
+    {"metric": "mms_temperature_C", "op": ">", "threshold": 80, "severity": "warning",
+     "message": "Motor controller over-temperature"},
+    {"metric": "bms_soc_percent", "op": "<", "threshold": 20, "severity": "warning",
+     "message": "Low state of charge"},
 ]
 
 

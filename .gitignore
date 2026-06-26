@@ -25,3 +25,7 @@ telemetry.csv
 .idea/
 .DS_Store
 Thumbs.db
+
+# Reference context only — not part of the SDK, never commit
+SolarRace_OS/
+Pit_Dashboard/
