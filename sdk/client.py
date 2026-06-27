@@ -230,6 +230,49 @@ def init(server_url: str, api_key: str, device_id: str, **kwargs) -> Client:
     return _default
 
 
+def auto_init(config_path: str | None = None) -> Client:
+    """Initialize the SDK without hand-coding init() — read config from, in order:
+
+      1. an explicit JSON file at `config_path`,
+      2. a `telemetry.json` file in the current directory (if present),
+      3. environment variables: TELEMETRY_SERVER_URL, TELEMETRY_API_KEY,
+         TELEMETRY_DEVICE_ID, and optional TELEMETRY_NETWORK.
+
+    A config file may set: server_url, api_key, device_id, network, and any other
+    Client option (batch_size, flush_interval, db_path, metadata, …). Handy on a
+    device that's provisioned once with a key from the dashboard's Setup tab.
+    """
+    import json
+    import os
+
+    cfg: dict = {}
+    path = config_path or ("telemetry.json" if os.path.exists("telemetry.json") else None)
+    if path:
+        with open(path, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+
+    server_url = cfg.get("server_url") or os.environ.get("TELEMETRY_SERVER_URL")
+    api_key = cfg.get("api_key") or os.environ.get("TELEMETRY_API_KEY")
+    device_id = cfg.get("device_id") or os.environ.get("TELEMETRY_DEVICE_ID")
+    network = cfg.get("network") or os.environ.get("TELEMETRY_NETWORK")
+
+    missing = [n for n, v in
+               (("server_url", server_url), ("api_key", api_key), ("device_id", device_id))
+               if not v]
+    if missing:
+        raise RuntimeError(
+            "auto_init() is missing: " + ", ".join(missing) +
+            ". Provide them in a config file or TELEMETRY_* environment variables."
+        )
+
+    # Pass through any extra Client options from the config file.
+    opts = {k: v for k, v in cfg.items()
+            if k not in ("server_url", "api_key", "device_id")}
+    if network and "network" not in opts:
+        opts["network"] = network
+    return init(server_url, api_key, device_id, **opts)
+
+
 def track(metric: str, value: float, ts: int | None = None) -> str:
     if _default is None:
         raise RuntimeError("SDK not initialized; call init() first")

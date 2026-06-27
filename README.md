@@ -1,165 +1,264 @@
 # Telemetry & Edge-Sync SDK
 
-Resilient telemetry for the **Raspberry Pi on a solar race car**. The SDK buffers
-the car's telemetry (BMS / motor controller / battery-temp controller) locally,
-batches it, and syncs it to a REST server **reliably even across network dropouts**
-— and the data lands in correct time order with no duplicates.
+> Resilient telemetry for the **Raspberry Pi on a solar race car** — buffer locally,
+> sync reliably across network dropouts, in correct time order, with no duplicates.
 
-> **The one guarantee:** no data is lost when the car loses signal, and it arrives
-> in correct chronological order.
+## Description
 
-The car's Pi software gets that for **three lines of code**. The pit crew gets a
-live command-center portal for **zero lines**. Neither has to build the complex,
-failure-prone sync infrastructure themselves.
+A solar race car generates a constant stream of telemetry (battery management system,
+motor controller, battery-temperature controller) on a Raspberry Pi. The car drives
+through tunnels, behind grandstands, and across long circuits where the cellular link
+drops. A naive "push to the cloud" loses every sample sent during an outage.
+
+This SDK is the fix. On the car it **buffers telemetry to a local SQLite queue first**,
+batches it, and syncs it to a REST server — surviving network dropouts *and* reboots.
+The pit wall watches a live web portal. The car's software integrates in **three lines**;
+the pit crew writes **zero**.
+
+> **The one guarantee:** no data is lost when the car loses signal, and it arrives in
+> correct chronological order, with no duplicates.
+
+## Features
+
+- **Durable offline queue** — every reading is written to on-device SQLite *before* any
+  send, so dropouts and reboots lose nothing.
+- **Smart batching** — many samples per request (by count or time): fewer round-trips,
+  less radio/battery cost.
+- **Auto-sync recovery** — backlog drains **oldest-first** the moment the link returns.
+- **Ordered, idempotent ingestion** — points carry a client-assigned id; the server
+  upserts on it, so retries never duplicate. Stored by **device time**, not arrival time.
+- **Network-aware sync policy** — batch size & frequency adapt to link type and battery.
+- **Server-side alert rule engine** — threshold rules over the car's signals, editable
+  live from the portal.
+- **API keys** — generate/revoke keys from the dashboard; the SDK can `auto_init()` from
+  config or environment.
+- **Pit-wall portal** — live charts, device health, alerts, rules editor, device setup.
+- **No third-party backend** — plain REST to your own server (not Firebase), no vendor
+  lock-in or service-account key on the car.
+
+## Screenshots
+
+> Capture from a running portal (`python run.py`). See
+> [docs/media/SHOTLIST.md](docs/media/SHOTLIST.md) for the exact shots; drop the PNGs in
+> `docs/media/` and these render.
+
+| Overview (live charts) | Alerts | Rules editor |
+|---|---|---|
+| ![Overview](docs/media/overview.png) | ![Alerts](docs/media/alerts.png) | ![Rules](docs/media/rules.png) |
+
+## Video
+
+> Demo walkthrough (≈75 s) — storyboard in [docs/media/SHOTLIST.md](docs/media/SHOTLIST.md).
+> Add the link here once recorded: **[▶ Demo video](#)** *(placeholder)*
 
 ---
 
-## Run the demo (30 seconds)
+## Data model (JSON)
 
-```bash
-pip install -r requirements.txt
-python run.py
+A **telemetry point** the SDK produces:
+
+```json
+{ "id": "solar-car-01-000042-1718900000123", "metric": "battery_temp_C", "value": 46.2, "ts": 1718900000123 }
 ```
 
-`run.py` starts the REST server **and** a simulated solar car (a SolarRace-OS
-shaped telemetry stream — BMS / motor / battery-temp signals), then opens the
-portal:
+`id` = `device-sequence-timestamp` (client-assigned → enables idempotent ingestion).
+`ts` is the **device** timestamp in epoch ms (the source of truth for ordering).
 
-- **Portal (command center):** http://127.0.0.1:8000/
-- **API reference (Swagger):** http://127.0.0.1:8000/docs
+A **batch** the SDK POSTs (static metadata once, dynamic points many):
 
-Try the resilience demo: while `run.py` runs, stop and restart the server — the
-car keeps buffering and drains the backlog **in order** once it's back, with
-nothing lost.
+```json
+{
+  "device_id": "solar-car-01",
+  "metadata": { "fw": "RaceOS-2.0", "type": "solar-car", "network": "lte" },
+  "points": [
+    { "id": "solar-car-01-000001-1718900000100", "metric": "bms_voltage_V",   "value": 108.4, "ts": 1718900000100 },
+    { "id": "solar-car-01-000002-1718900000101", "metric": "bms_soc_percent", "value": 76.0,  "ts": 1718900000101 }
+  ]
+}
+```
+
+## Database
+
+Server storage is SQLite. The core table (full schema + ERD in
+[docs/diagrams.md](docs/diagrams.md)):
+
+```sql
+CREATE TABLE telemetry (
+  id          TEXT PRIMARY KEY,   -- client-assigned -> idempotent upsert
+  device_id   TEXT NOT NULL,
+  metric      TEXT NOT NULL,
+  value       REAL NOT NULL,
+  device_ts   INTEGER NOT NULL,   -- order + late-arrival by device time
+  received_ts INTEGER NOT NULL    -- server arrival (diagnostics only)
+);
+-- sample row:
+-- ('solar-car-01-000042-...', 'solar-car-01', 'battery_temp_C', 46.2, 1718900000123, 1718900000130)
+```
+
+Other tables: `device_meta` (latest metadata per device), `alerts` (rule breaches),
+`rules` (editable alert rules), `api_keys` (issued keys). On the car, the SDK keeps a
+durable `outbox` table.
 
 ---
 
-## Quickstart (the SDK's public API)
+## Public functions
 
-The car's Pi software embeds the SDK. The entire public API is three calls:
+What the car's software calls. Full reference + examples in
+[docs/sdk-reference.md](docs/sdk-reference.md).
+
+| Function | Purpose |
+|---|---|
+| `init(server_url, api_key, device_id, **opts)` | Configure the SDK (target, auth, identity, options). |
+| `auto_init(config_path=None)` | Configure from a `telemetry.json` file or `TELEMETRY_*` env vars — no hand-coding. |
+| `track(metric, value, ts=None)` | Record one data point. Non-blocking, durable. Returns the point id. |
+| `force_flush(timeout=15.0)` | Block until the queue drains (e.g. before shutdown). |
+| `Client(...)` | The SDK object behind the module API (use directly for multiple devices/instances). |
+| `Client.set_link(network=, battery=)` | Update link conditions at runtime; the batcher adapts immediately. |
+| `track_vehicle_state(vehicle_state, client=None, ts=None)` | Hand a SolarRace-OS dict to the SDK — tracks every numeric signal. |
 
 ```python
 from sdk.client import init, track, force_flush
-
-# 1. Set up once, at startup: where to send, auth, and the car's identity.
-init("https://telemetry.example.com", api_key="dev-key", device_id="solar-car-01")
-
-# 2. Inject a reading whenever the Pi decodes one. Returns immediately — it never
-#    blocks, even with no signal. The point is persisted to a local SQLite queue
-#    first, then synced in the background.
+init("https://telemetry.example.com", api_key="<key>", device_id="solar-car-01")
 track("battery_temp_C", 46.2)
-track("bms_soc_percent", 74)
-
-# 3. Before shutdown, push anything still queued.
 force_flush()
 ```
 
-That's it. Local buffering, batching, retry with backoff, and ordered resync
-after a dropout all happen inside the SDK — you never see them. In practice you
-won't call `track()` per signal by hand; the SolarRace integration below does it
-for the whole `vehicle_state` in one call.
+## Internal functions
 
-| Call | Role |
-|---|---|
-| `init(server_url, api_key, device_id, **opts)` | Configure the SDK (target, auth, identity). |
-| `track(metric, value, ts=None)` | Record one data point. Non-blocking; durable. `ts` defaults to now (epoch ms). |
-| `force_flush(timeout=15.0)` | Block until the queue drains (e.g. before exit). Returns `True` if fully synced. |
+The implementation behind the guarantee (see [docs/implementation.md](docs/implementation.md)).
 
-### Useful `init` options
+| Where | Function | Role |
+|---|---|---|
+| `sdk/queue.py` | `Queue.enqueue / fetch_unsent / mark_sent` | Durable SQLite outbox; fetch oldest-first; mark sent only after ack. |
+| `sdk/client.py` | `_run` | Background batcher loop: flush on timer/nudge, retry with exponential backoff. |
+| `sdk/client.py` | `_send_batch / _http_send` | Package points into a batch and POST with `X-API-Key`. |
+| `sdk/client.py` | `_apply_policy / _next_id` | Apply network policy; mint the client-assigned point id. |
+| `sdk/sync_policy.py` | `plan(network, battery)` | Map link conditions → `(batch_size, flush_interval, allow_send)`. |
+| `server/main.py` | `ingest / _valid_key / load_rules` | Auth, idempotent upsert, alert-rule evaluation. |
 
-```python
-init(url, api_key, device_id,
-     db_path="sdk_outbox.db",   # where the durable local queue lives
-     batch_size=50,             # points per request (when no network policy)
-     flush_interval=2.0,        # seconds between sync attempts
-     network="lte",             # enable network-aware sync (wifi/5g/lte/3g/edge/offline)
-     metadata={"fw": "RaceOS-2.0", "type": "solar-car"})  # static, sent once per batch
+---
+
+## Diagrams
+
+(Also in [docs/diagrams.md](docs/diagrams.md). Mermaid renders on GitHub.)
+
+### System architecture
+
+```mermaid
+flowchart LR
+    subgraph CAR["Solar car — Raspberry Pi"]
+        OS["SolarRace-OS<br/>decodes CAN → vehicle_state"] --> BRIDGE["track_vehicle_state()"]
+        subgraph SDK["Edge-Sync SDK"]
+            BRIDGE --> Q[("SQLite outbox")] --> BATCH["Batcher"] --> SEND["Sender (retry)"]
+        end
+    end
+    SEND -- "POST /api/v1/telemetry (X-API-Key)" --> API
+    subgraph SERVER["REST API server (FastAPI)"]
+        API["Ingest: auth · upsert · rules"] --> DB[("SQLite")]
+    end
+    DB --> READ["GET /metrics · /alerts · /devices"] -- "poll 1.5s" --> PORTAL["Pit-wall portal"]
 ```
 
-Setting `network=` turns on the **network-aware sync policy**: batch size and
-flush frequency adapt to link quality and battery (fast links → small frequent
-batches; slow links → larger, less frequent ones; low battery → backs off).
+### Entity-relationship diagram
 
----
-
-## Integrating with SolarRace OS (Raspberry Pi)
-
-On the car, the Raspberry Pi already reads the CAN bus and decodes it into a
-nested `vehicle_state` dict (BMS / motor controller / battery-temp controller).
-Today that dict is pushed to the cloud **fire-and-forget** — so a dropout
-silently loses data. The SDK is the resilient replacement: same data, buffered
-durably, batched, and synced **in order with no loss**.
-
-The SDK does **no CAN decoding** — the Pi already did that. You just hand it the
-decoded dict. Two changes to the Pi's `main.py`:
-
-```python
-from sdk.client import init
-from sdk.integrations.solar_race import track_vehicle_state
-
-# 1. once, at startup:
-init("https://telemetry.example.com", api_key="dev-key",
-     device_id="solar-car-01", network="lte")
-
-# 2. in _decode_message(), where you currently push to the cloud — add one line:
-track_vehicle_state(self.vehicle_state)   # resilient: buffers + ordered resync
+```mermaid
+erDiagram
+    OUTBOX      ||..|| TELEMETRY : "syncs (by point id)"
+    TELEMETRY   ||--o{ ALERTS    : "breach raises"
+    RULES       ||--o{ ALERTS    : "evaluated into"
+    DEVICE_META ||--o{ TELEMETRY : "describes (device_id)"
+    API_KEYS    ||..o{ TELEMETRY : "authenticates ingest"
 ```
 
-`track_vehicle_state()` walks the dict and calls `track(name, value)` for every
-numeric signal (`bms_voltage_V`, `bms_soc_percent`, `battery_temp_C`, `mms_rpm`,
-…), skipping flags/lists. See [sdk/integrations/solar_race.py](sdk/integrations/solar_race.py).
-The only dependency the SDK adds on the Pi is `httpx`.
+> Full table-by-table ERD with columns is in [docs/diagrams.md](docs/diagrams.md).
 
-> Why this matters: the fire-and-forget cloud push drops whatever it can't send
-> the instant the link blips. Routed through the SDK, those points sit safely in
-> the on-disk queue and drain in chronological order the moment the link returns.
+### Sequence (track → chart, with offline recovery)
 
-### Clean separation
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Pi as Car (SolarRace-OS)
+    participant SDK as Edge-Sync SDK
+    participant API as REST server
+    participant UI as Pit portal
+    Pi->>SDK: track_vehicle_state(vehicle_state, ts)
+    SDK->>SDK: enqueue to SQLite (durable)
+    loop batcher
+        alt network up
+            SDK->>API: POST /telemetry (batch)
+            API->>API: validate key · upsert · rules
+            API-->>SDK: 200 {accepted, alerts}
+            SDK->>SDK: mark_sent
+        else network down
+            SDK--xAPI: fails → backoff, keep buffering
+        end
+    end
+    UI->>API: GET /metrics (poll)
+    API-->>UI: points (device-time order) + alerts
+```
 
-The SDK pipeline never sees `vehicle_state` — that flattening lives in one small
-integration file ([sdk/integrations/solar_race.py](sdk/integrations/solar_race.py)). The
-pipeline only moves `metric / value / timestamp`, so every car subsystem (BMS, motor
-controller, battery-temp controller) plugs in through that one file while the durability
-layer stays untouched.
+### State (the batcher)
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Draining: timer / full / force_flush
+    Draining --> Sending: unsent exist
+    Draining --> Idle: empty
+    Sending --> Idle: 200 OK (mark_sent)
+    Sending --> Backoff: send failed
+    Backoff --> Sending: wait (1s→2s→4s…)
+    Idle --> BufferOnly: network = offline
+    BufferOnly --> Idle: link restored
+```
 
 ---
 
-## For operators — the portal
+## Quick start
 
-The pit crew monitors the car from the portal (no code). One site, four tabs:
+```bash
+pip install -r requirements.txt
+python run.py     # starts the server + a simulated solar car, opens the portal
+```
 
-| Tab | What it shows |
-|---|---|
-| **Overview** | Live charts (filter by device/metric, hover, CSV export) + KPIs |
-| **Devices** | Per-device health: online/idle/offline, last sync, battery, link type |
-| **Alerts** | Threshold breaches from the rule engine, newest first |
-| **Rules** | Add / enable / disable / delete alert rules — takes effect live, no restart |
+- **Portal:** http://127.0.0.1:8000/ · **API docs (Swagger):** http://127.0.0.1:8000/docs
+- In the portal's **Setup** tab, generate an API key — it shows a ready-to-paste
+  `auto_init()` snippet for the car. Full walkthrough: [docs/getting-started.md](docs/getting-started.md).
 
----
+Resilience demo: stop and restart the server while `run.py` runs — the car keeps
+buffering and drains the backlog **in order**, nothing lost.
 
 ## REST API
 
-The SDK speaks plain REST, so the car syncs to our own server (not a third-party
-backend like Firebase). Endpoints:
-
 | Method & path | Role |
 |---|---|
-| `POST /api/v1/telemetry` | Ingest a batch (auth via `X-API-Key`). Idempotent upsert by point id. |
+| `POST /api/v1/telemetry` | Ingest a batch (auth `X-API-Key`). Idempotent upsert by point id. |
 | `GET /api/v1/metrics?device=&metric=&from=&to=` | Read points, ordered by device time. |
 | `GET /api/v1/devices` | Per-device health + latest metadata. |
 | `GET /api/v1/alerts?device=&limit=` | Recent alerts. |
 | `GET/POST/PATCH/DELETE /api/v1/rules` | Manage alert rules. |
+| `GET/POST/DELETE /api/v1/keys` | Issue / list / revoke API keys. |
 
----
+Full reference: [docs/rest-api.md](docs/rest-api.md).
+
+## Documentation
+
+Full docs live in **[`docs/`](docs/)** (the permalink once pushed to GitHub):
+[index](docs/index.md) · [use cases](docs/use-cases.md) · [features](docs/features.md) ·
+[getting started](docs/getting-started.md) · [SDK reference](docs/sdk-reference.md) ·
+[user init & API keys](docs/user-init.md) · [dashboard](docs/dashboard.md) ·
+[implementation](docs/implementation.md) · [REST API](docs/rest-api.md) ·
+[diagrams](docs/diagrams.md).
 
 ## Project layout
 
 ```
-sdk/              edge SDK: client (queue→batch→retry), durable queue, sync policy
+sdk/              edge SDK: client (queue→batch→retry), durable queue, sync policy, auto_init
   integrations/   solar-car bridge — solar_race.py (vehicle_state → track) + simulator
-server/           FastAPI REST API + alert rule engine, serves the portal
-dashboard/        the single-page command-center portal (no build step, no CDN)
-tests/            no-loss, idempotency, crash-recovery, alerts, sync-policy, bridge
+server/           FastAPI REST API + alert rule engine + API keys, serves the portal
+dashboard/        single-page command-center portal (no build step, no CDN)
+docs/             the documentation set (this is the deliverable docs)
+tests/            no-loss, idempotency, crash-recovery, alerts, sync-policy, bridge, keys, auto-init
 run.py            one-command launcher: server + simulated solar car + browser
 ```
 
@@ -170,13 +269,11 @@ pytest
 ```
 
 Covers the core guarantees: no-loss across a network drop, idempotency on lost
-acknowledgements, data survival across a process restart, the alert rule engine,
-and the network-aware sync policy.
-
----
+acknowledgements, data survival across a process restart, the alert rule engine, the
+network-aware sync policy, API-key validation, and `auto_init`.
 
 ## Design & scope
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — full design and the key engineering decisions.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — full design and key engineering decisions.
 - [FUTURE_WORK.md](FUTURE_WORK.md) — what's deferred (TSDB, message broker, Protobuf,
-  native mobile SDKs, WebSocket push) and why, with the path to add each.
+  WebSocket push, multi-car fleet) and why, with the path to add each.

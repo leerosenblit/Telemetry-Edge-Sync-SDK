@@ -16,6 +16,7 @@ the dashboard's Alerts panel.
 
 import json
 import os
+import secrets
 import sqlite3
 import time
 from contextlib import asynccontextmanager
@@ -173,10 +174,38 @@ def init_db() -> None:
                 "VALUES (:metric, :op, :threshold, :severity, :message)",
                 DEFAULT_RULES,
             )
+        # API keys the car authenticates with. The dashboard's Setup tab issues
+        # and revokes them; ingestion validates against this table.
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS api_keys (
+                key        TEXT PRIMARY KEY,
+                label      TEXT NOT NULL,
+                created_ts INTEGER NOT NULL,
+                revoked    INTEGER NOT NULL DEFAULT 0
+            )
+            """
+        )
+        # Seed the default key so existing setups (and tests) keep working.
+        conn.execute(
+            "INSERT OR IGNORE INTO api_keys (key, label, created_ts) VALUES (?, ?, ?)",
+            (API_KEY, "default", _now_ms()),
+        )
 
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
+
+
+def _valid_key(key: str | None) -> bool:
+    """True if `key` exists in api_keys and is not revoked."""
+    if not key:
+        return False
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM api_keys WHERE key = ? AND revoked = 0", (key,)
+        ).fetchone()
+    return row is not None
 
 
 # --- endpoints --------------------------------------------------------------
@@ -184,7 +213,7 @@ def _now_ms() -> int:
 @app.post("/api/v1/telemetry")
 def ingest(batch: Batch, x_api_key: str = Header(default=None)):
     """Ingest a batch: authenticate, then idempotently upsert every point."""
-    if x_api_key != API_KEY:
+    if not _valid_key(x_api_key):
         raise HTTPException(status_code=401, detail="bad api key")
 
     received_ts = _now_ms()
@@ -375,6 +404,47 @@ def delete_rule(rule_id: int):
         if cur.rowcount == 0:
             raise HTTPException(status_code=404, detail="no such rule")
     return {"deleted": rule_id}
+
+
+# --- API keys ---------------------------------------------------------------
+# Issued and revoked from the dashboard's Setup tab; the car puts its key in the
+# X-API-Key header (or via auto_init). Like the rules CRUD, these endpoints are
+# unauthenticated for this local-tool scope (see FUTURE_WORK.md).
+
+class KeyIn(BaseModel):
+    label: str = "device"
+
+
+@app.get("/api/v1/keys")
+def get_keys():
+    """List API keys (newest first)."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT key, label, created_ts, revoked FROM api_keys ORDER BY created_ts DESC"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/v1/keys", status_code=201)
+def create_key(body: KeyIn):
+    """Generate a new API key the car can authenticate with."""
+    key = secrets.token_urlsafe(24)
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO api_keys (key, label, created_ts) VALUES (?, ?, ?)",
+            (key, body.label or "device", _now_ms()),
+        )
+    return {"key": key, "label": body.label or "device", "revoked": 0}
+
+
+@app.delete("/api/v1/keys/{key}")
+def revoke_key(key: str):
+    """Revoke an API key (soft delete — kept for history)."""
+    with _connect() as conn:
+        cur = conn.execute("UPDATE api_keys SET revoked = 1 WHERE key = ?", (key,))
+        if cur.rowcount == 0:
+            raise HTTPException(status_code=404, detail="no such key")
+    return {"revoked": key}
 
 
 # --- dashboard (served from the same origin so it's a one-URL portal) -------

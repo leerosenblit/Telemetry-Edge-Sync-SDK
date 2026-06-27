@@ -50,6 +50,7 @@
       display: flex; align-items: center; gap: 8px; transition: color .15s, border-color .15s; }
     nav button:hover { color: var(--text); }
     nav button.active { color: var(--teal); border-bottom-color: var(--teal); }
+    nav button svg { width: 15px; height: 15px; flex: none; }
     nav .badge { background: rgba(248,113,113,.18); color: var(--bad); border-radius: 999px;
       font-size: 11px; font-weight: 700; padding: 1px 7px; min-width: 18px; text-align: center; }
     nav .badge.zero { background: rgba(148,163,184,.14); color: var(--muted-2); }
@@ -167,10 +168,11 @@
     </header>
 
     <nav>
-      <button data-tab="overview" class="active">📈 Overview</button>
-      <button data-tab="devices">🛰 Devices <span class="badge zero" id="nav-dev">0</span></button>
-      <button data-tab="alerts">🔔 Alerts <span class="badge zero" id="nav-alerts">0</span></button>
-      <button data-tab="rules">⚙ Rules <span class="badge zero" id="nav-rules">0</span></button>
+      <button data-tab="overview" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l4-5 4 4 4-7 6 9"/></svg> Overview</button>
+      <button data-tab="devices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg> Devices <span class="badge zero" id="nav-dev">0</span></button>
+      <button data-tab="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg> Alerts <span class="badge zero" id="nav-alerts">0</span></button>
+      <button data-tab="rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Rules <span class="badge zero" id="nav-rules">0</span></button>
+      <button data-tab="setup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg> Setup</button>
     </nav>
 
     <section class="cards">
@@ -250,6 +252,33 @@
       </section>
     </div>
 
+    <!-- SETUP / API KEYS -->
+    <div class="tab" id="tab-setup">
+      <section class="panel">
+        <div class="panel-head">
+          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg></span>
+          <h2>Set up a device</h2>
+          <span class="hint" style="margin-left:auto">generate an API key, then point the car at this server</span>
+        </div>
+        <div style="padding:16px 19px">
+          <p style="color:var(--muted);font-size:13px;margin:0 0 12px">
+            1 — Generate an API key for the car. 2 — Put it in the car's config (or env vars).
+            The SDK's <code style="color:var(--teal)">auto_init()</code> picks it up and starts syncing.
+          </p>
+          <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:10px">
+            <div class="ff"><label style="color:var(--muted-2);font-size:11px;text-transform:uppercase">Label</label>
+              <input id="k-label" placeholder="solar-car-01" /></div>
+            <button class="btn primary" id="k-add">Generate API key</button>
+          </div>
+          <div class="rows" id="keys"><div class="none">Loading…</div></div>
+        </div>
+        <div class="panel-head" style="border-top:1px solid var(--border-soft)">
+          <h2 style="font-size:13px">Use it on the car</h2>
+        </div>
+        <pre id="setup-snippet" style="margin:0;padding:16px 19px;overflow-x:auto;font-size:12.5px;color:#cfe9e3;background:#0a0f1a;line-height:1.5"></pre>
+      </section>
+    </div>
+
     <p class="foot">Edge-Sync SDK · <a href="/docs">API reference</a> · buffers locally, syncs reliably across dropouts</p>
   </div>
   <div class="toast" id="toast"></div>
@@ -268,6 +297,7 @@
       document.querySelectorAll("nav button").forEach((b) => b.classList.toggle("active", b.dataset.tab === name));
       document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.id === `tab-${name}`));
       if (name === "rules") loadRules();
+      if (name === "setup") loadKeys();
       if (name === "overview") requestAnimationFrame(draw);
     }
 
@@ -319,7 +349,7 @@
         else if (age > 6000) { cls = "state-idle"; txt = "idle"; dot = "warn"; }
         const meta = d.metadata || {}; let link = "";
         if (meta.network) { link = `<div class="link"><b>${meta.network.toUpperCase()}</b>`;
-          if (meta.battery != null) link += ` · 🔋 ${meta.battery}%`; if (meta.type) link += ` · ${meta.type}`; link += `</div>`; }
+          if (meta.battery != null) link += ` · <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-1px"><rect x="2" y="7" width="16" height="10" rx="2"/><line x1="22" y1="11" x2="22" y2="13"/></svg> ${meta.battery}%`; if (meta.type) link += ` · ${meta.type}`; link += `</div>`; }
         const el = document.createElement("div"); el.className = "device";
         el.innerHTML = `<span class="dot ${dot}"></span><div><div class="id">${d.device_id}</div>` +
           `<div class="meta">last sync ${relTime(d.last_received_ts)}</div>${link}</div>` +
@@ -383,6 +413,56 @@
       toast(enabled ? "Rule enabled" : "Rule disabled"); loadRules();
     }
     $("r-add").onclick = addRule;
+
+    // ---- API keys (Setup tab) ----
+    async function loadKeys(highlightKey) {
+      try {
+        const list = await (await fetch(`${API}/api/v1/keys`)).json();
+        const box = $("keys"); box.innerHTML = list.length ? "" : '<div class="none">No keys yet.</div>';
+        list.forEach((k) => {
+          const el = document.createElement("div"); el.className = "rule" + (k.revoked ? " off" : "");
+          const shown = k.key.length > 14 ? k.key.slice(0, 10) + "…" : k.key;
+          el.innerHTML =
+            `<span class="tag ${k.revoked ? "warning" : "critical"}" style="${k.revoked ? "" : "background:rgba(94,234,212,.16);color:var(--teal)"}">${k.revoked ? "revoked" : "active"}</span>` +
+            `<div><div class="cond"><b>${k.label}</b></div>` +
+            `<div class="rmsg" style="font-family:ui-monospace,monospace">${shown}</div></div>` +
+            `<div class="acts">` +
+            (k.revoked ? "" : `<button class="btn ghost k-copy" data-key="${k.key}">Copy</button>` +
+                             `<button class="btn danger k-del" data-key="${k.key}">Revoke</button>`) +
+            `</div>`;
+          box.appendChild(el);
+        });
+        box.querySelectorAll(".k-copy").forEach((b) => b.onclick = () => {
+          navigator.clipboard?.writeText(b.dataset.key); renderSnippet(b.dataset.key); toast("Key copied"); });
+        box.querySelectorAll(".k-del").forEach((b) => b.onclick = () => revokeKey(b.dataset.key));
+        // Prefill the snippet with the highlighted/newest active key.
+        const active = list.filter((k) => !k.revoked);
+        renderSnippet(highlightKey || (active[0] && active[0].key) || "<YOUR_API_KEY>");
+      } catch (e) { $("keys").innerHTML = '<div class="none">Server unreachable.</div>'; }
+    }
+    async function createKey() {
+      const label = $("k-label").value.trim() || "device";
+      const res = await fetch(`${API}/api/v1/keys`, { method: "POST",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label }) });
+      if (res.ok) { const k = await res.json(); $("k-label").value = ""; toast("API key generated"); loadKeys(k.key); }
+      else { toast("Could not generate key"); }
+    }
+    async function revokeKey(key) {
+      const res = await fetch(`${API}/api/v1/keys/${encodeURIComponent(key)}`, { method: "DELETE" });
+      if (res.ok) { toast("Key revoked"); loadKeys(); }
+    }
+    function renderSnippet(key) {
+      $("setup-snippet").textContent =
+`# 1) point the car at this server (env vars, or a telemetry.json)
+export TELEMETRY_SERVER_URL="${API}"
+export TELEMETRY_API_KEY="${key}"
+export TELEMETRY_DEVICE_ID="solar-car-01"
+
+# 2) in the car's code — auto_init() reads the above and starts syncing
+from sdk.client import auto_init
+auto_init()`;
+    }
+    $("k-add").onclick = createKey;
 
     // ---- chart ----
     const cv = $("chart"), ctx = cv.getContext("2d");
