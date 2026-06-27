@@ -1,0 +1,18 @@
+# Render Blueprint — one-click deploy of the Edge-Sync server + portal.
+# In Render: New → Blueprint → pick this repo. See docs/deploy.md for the full guide.
+services:
+  - type: web
+    name: edge-sync-telemetry
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # No simulator in the cloud — only the real Pi feeds it.
+    startCommand: uvicorn server.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      # The seeded API key the car authenticates with. Re-seeded on every start,
+      # so it survives the free tier's ephemeral disk. Set your own strong value
+      # in the Render dashboard (Environment tab) and use it on the Pi.
+      - key: TELEMETRY_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.12.4"

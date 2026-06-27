@@ -248,7 +248,13 @@ Full docs live in **[`docs/`](docs/)** (the permalink once pushed to GitHub):
 [getting started](docs/getting-started.md) · [SDK reference](docs/sdk-reference.md) ·
 [user init & API keys](docs/user-init.md) · [dashboard](docs/dashboard.md) ·
 [implementation](docs/implementation.md) · [REST API](docs/rest-api.md) ·
-[diagrams](docs/diagrams.md).
+[diagrams](docs/diagrams.md) · [cloud deploy](docs/deploy.md).
+
+## Deploying to the cloud
+
+To run the server publicly so a remote Pi (on cellular) can reach it, deploy to Render with
+the included [`render.yaml`](render.yaml) / [`Procfile`](Procfile) — full walkthrough in
+[docs/deploy.md](docs/deploy.md).
 
 ## Project layout
 

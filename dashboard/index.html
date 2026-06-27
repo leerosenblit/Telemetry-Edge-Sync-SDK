@@ -6,16 +6,17 @@
   <title>Edge-Sync · Command Center</title>
   <style>
     :root {
-      --bg: #0a0e1a;
-      --glow: radial-gradient(1100px 520px at 78% -12%, rgba(45,212,191,.10) 0%, transparent 60%),
-              radial-gradient(820px 460px at -8% -6%, rgba(56,189,248,.07) 0%, transparent 55%);
-      --panel: #111726; --panel-2: #0e1422; --card: #121a2b;
-      --border: #1c2435; --border-soft: #18202f;
-      --text: #f1f5f9; --muted: #94a3b8; --muted-2: #64748b;
-      --teal: #5eead4; --teal-2: #2dd4bf; --cyan: #22d3ee;
-      --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
-      --radius: 16px;
-      --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 18px 40px -18px rgba(0,0,0,.7);
+      /* Palette matched to the Afeka pit-wall dashboard: near-black, neon cyan. */
+      --bg: #0d1117;
+      --glow: radial-gradient(1100px 520px at 78% -12%, rgba(0,255,204,.08) 0%, transparent 60%),
+              radial-gradient(820px 460px at -8% -6%, rgba(52,152,219,.06) 0%, transparent 55%);
+      --panel: #1a1a1a; --panel-2: #0d1117; --card: #1a1a1a;
+      --border: #333; --border-soft: #1a2a4a;
+      --text: #e6edf3; --muted: #8899aa; --muted-2: #55667a;
+      --teal: #00ffcc; --teal-2: #00d9ad; --cyan: #3498db;
+      --ok: #2ecc71; --warn: #ff9900; --bad: #ff3333;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(0,0,0,.6);
       color-scheme: dark;
     }
     * { box-sizing: border-box; }
@@ -26,9 +27,9 @@
     .wrap { max-width: 1240px; margin: 0 auto; padding: 26px 26px 56px; }
 
     header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
-    .logo { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center;
-      background: linear-gradient(150deg, rgba(94,234,212,.22), rgba(34,211,238,.12));
-      border: 1px solid rgba(94,234,212,.3); box-shadow: 0 10px 30px -10px rgba(45,212,191,.5); }
+    .logo { width: 46px; height: 46px; border-radius: 11px; display: grid; place-items: center;
+      background: linear-gradient(150deg, rgba(0,255,204,.18), rgba(52,152,219,.10));
+      border: 1px solid rgba(0,255,204,.35); box-shadow: 0 0 22px rgba(0,255,204,.35); }
     .logo svg { width: 26px; height: 26px; }
     .brand h1 { font-size: 19px; margin: 0; font-weight: 700; letter-spacing: -.2px; }
     .brand h1 .accent { color: var(--teal); }
@@ -57,15 +58,16 @@
 
     .cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 18px; }
     @media (max-width: 760px) { .cards { grid-template-columns: repeat(2,1fr); } }
-    .card { background: linear-gradient(180deg, var(--card), var(--panel-2));
-      border: 1px solid var(--border-soft); border-radius: var(--radius);
-      padding: 17px 19px; box-shadow: var(--shadow); }
-    .card .label { color: var(--muted); font-size: 11.5px; font-weight: 600; letter-spacing: .6px; text-transform: uppercase; }
-    .card .value { font-size: 27px; font-weight: 720; margin-top: 7px; letter-spacing: -.6px; font-variant-numeric: tabular-nums; }
-    .card .value.teal { color: var(--teal); }
+    .card { background: var(--panel);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 16px 18px; box-shadow: var(--shadow); }
+    .card .label { color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; }
+    .card .value { font-size: 34px; font-weight: 800; margin-top: 6px; letter-spacing: -1px;
+      font-variant-numeric: tabular-nums; color: var(--text); }
+    .card .value.teal { color: var(--teal); text-shadow: 0 0 18px rgba(0,255,204,.35); }
     .card .sub { color: var(--muted-2); font-size: 12px; margin-top: 4px; }
 
-    .panel { background: linear-gradient(180deg, var(--card), var(--panel-2));
+    .panel { background: linear-gradient(135deg, #06080f, #0d1117);
       border: 1px solid var(--border-soft); border-radius: var(--radius);
       box-shadow: var(--shadow); overflow: hidden; }
     .panel-head { display: flex; align-items: center; gap: 10px; padding: 16px 19px; border-bottom: 1px solid var(--border-soft); }
@@ -111,8 +113,10 @@
 
     .alert { border: 1px solid var(--border-soft); background: var(--panel); }
     .alert .sev { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-    .alert.critical { border-color: rgba(248,113,113,.35); } .alert.critical .sev { background: var(--bad); box-shadow: 0 0 10px var(--bad); }
+    .alert.critical { border-color: rgba(255,51,51,.4); }
+    .alert.critical .sev { background: var(--bad); box-shadow: 0 0 10px var(--bad); animation: blink 1.2s linear infinite; }
     .alert.warning .sev { background: var(--warn); box-shadow: 0 0 10px var(--warn); }
+    @keyframes blink { 50% { opacity: .4; } }
     .alert .msg { font-weight: 600; font-size: 13px; } .alert .det { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
     .alert .when { margin-left: auto; color: var(--muted-2); font-size: 11.5px; white-space: nowrap; }
     .none { color: var(--muted-2); font-size: 12.5px; padding: 18px 12px; text-align: center; }
@@ -153,10 +157,10 @@
   <div class="wrap">
     <header>
       <div class="logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#00ffcc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 10a8 8 0 0 1 8 8" /><path d="M4 16a2 2 0 0 1 2 2" />
-          <circle cx="5" cy="19" r="1.4" fill="#5eead4" /><path d="M11.5 9.5 3 18" />
-          <path d="M13.8 4.2a5 5 0 0 1 6 6l-2.4-2.4a1.6 1.6 0 0 0-2.3 0z" fill="#5eead4" stroke="none"/>
+          <circle cx="5" cy="19" r="1.4" fill="#00ffcc" /><path d="M11.5 9.5 3 18" />
+          <path d="M13.8 4.2a5 5 0 0 1 6 6l-2.4-2.4a1.6 1.6 0 0 0-2.3 0z" fill="#00ffcc" stroke="none"/>
         </svg>
       </div>
       <div class="brand">
@@ -187,7 +191,7 @@
       <section class="panel">
         <div class="toolbar">
           <span class="panel-head icon" style="padding:0;border:0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l4-5 4 4 4-7 6 9"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14l4-5 4 4 4-7 6 9"/></svg>
           </span>
           <strong style="font-size:14px">Live Data Charts</strong>
           <div style="flex:1"></div>
@@ -212,7 +216,7 @@
     <div class="tab" id="tab-devices">
       <section class="panel">
         <div class="panel-head">
-          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
           <h2>Device Status</h2>
           <span class="hint" style="margin-left:auto" id="dev-count"></span>
         </div>
@@ -224,7 +228,7 @@
     <div class="tab" id="tab-alerts">
       <section class="panel">
         <div class="panel-head">
-          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
           <h2>Alerts</h2>
           <span class="hint" style="margin-left:auto">newest first · from the rule engine</span>
         </div>
@@ -236,7 +240,7 @@
     <div class="tab" id="tab-rules">
       <section class="panel">
         <div class="panel-head">
-          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
           <h2>Alert Rules Engine</h2>
           <span class="hint" style="margin-left:auto">edits apply live — no restart</span>
         </div>
@@ -256,7 +260,7 @@
     <div class="tab" id="tab-setup">
       <section class="panel">
         <div class="panel-head">
-          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5eead4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg></span>
+          <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ffcc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3"/></svg></span>
           <h2>Set up a device</h2>
           <span class="hint" style="margin-left:auto">generate an API key, then point the car at this server</span>
         </div>
@@ -285,7 +289,7 @@
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const PALETTE = ["#5eead4", "#22d3ee", "#38bdf8", "#818cf8", "#f472b6", "#fbbf24", "#34d399"];
+    const PALETTE = ["#00ffcc", "#3498db", "#ff9900", "#ff3333", "#f1c40f", "#2ecc71", "#e74c3c"];
     const API = (location.origin && location.origin.startsWith("http")) ? location.origin : "http://127.0.0.1:8000";
 
     let rows = [], series = [], hover = null;
@@ -423,7 +427,7 @@
           const el = document.createElement("div"); el.className = "rule" + (k.revoked ? " off" : "");
           const shown = k.key.length > 14 ? k.key.slice(0, 10) + "…" : k.key;
           el.innerHTML =
-            `<span class="tag ${k.revoked ? "warning" : "critical"}" style="${k.revoked ? "" : "background:rgba(94,234,212,.16);color:var(--teal)"}">${k.revoked ? "revoked" : "active"}</span>` +
+            `<span class="tag ${k.revoked ? "warning" : "critical"}" style="${k.revoked ? "" : "background:rgba(0,255,204,.16);color:var(--teal)"}">${k.revoked ? "revoked" : "active"}</span>` +
             `<div><div class="cond"><b>${k.label}</b></div>` +
             `<div class="rmsg" style="font-family:ui-monospace,monospace">${shown}</div></div>` +
             `<div class="acts">` +
@@ -483,11 +487,11 @@ auto_init()`;
       geom = { plot, minX, maxX, sx, sy };
       ctx.font = "11px ui-sans-serif, system-ui, sans-serif"; ctx.textBaseline = "middle";
       for (let i = 0; i <= 4; i++) { const yy = plot.y + (plot.h / 4) * i;
-        ctx.strokeStyle = "#18202f"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(plot.x, yy); ctx.lineTo(plot.x + plot.w, yy); ctx.stroke();
-        ctx.fillStyle = "#64748b"; ctx.textAlign = "right"; ctx.fillText((maxY - ((maxY - minY) / 4) * i).toFixed(1), plot.x - 10, yy); }
+        ctx.strokeStyle = "#222a33"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(plot.x, yy); ctx.lineTo(plot.x + plot.w, yy); ctx.stroke();
+        ctx.fillStyle = "#55667a"; ctx.textAlign = "right"; ctx.fillText((maxY - ((maxY - minY) / 4) * i).toFixed(1), plot.x - 10, yy); }
       ctx.textAlign = "center"; ctx.textBaseline = "top";
       for (let i = 0; i <= 4; i++) { const xx = plot.x + (plot.w / 4) * i, t = minX + ((maxX - minX) / 4) * i;
-        ctx.fillStyle = "#64748b"; ctx.fillText(new Date(t).toLocaleTimeString(), xx, plot.y + plot.h + 7); }
+        ctx.fillStyle = "#55667a"; ctx.fillText(new Date(t).toLocaleTimeString(), xx, plot.y + plot.h + 7); }
       series.forEach((s, idx) => { const pts = s.points; if (!pts.length) return;
         if (idx === 0) { const g = ctx.createLinearGradient(0, plot.y, 0, plot.y + plot.h);
           g.addColorStop(0, s.color + "40"); g.addColorStop(1, s.color + "00");
@@ -496,9 +500,9 @@ auto_init()`;
         ctx.beginPath(); ctx.moveTo(sx(pts[0].x), sy(pts[0].y)); pts.forEach((p) => ctx.lineTo(sx(p.x), sy(p.y)));
         ctx.strokeStyle = s.color; ctx.lineWidth = 1.9; ctx.lineJoin = "round"; ctx.stroke(); });
       if (hover && hover.x >= plot.x && hover.x <= plot.x + plot.w) {
-        ctx.strokeStyle = "#39425e"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(hover.x, plot.y); ctx.lineTo(hover.x, plot.y + plot.h); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = "#33415a"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(hover.x, plot.y); ctx.lineTo(hover.x, plot.y + plot.h); ctx.stroke(); ctx.setLineDash([]);
         series.forEach((s) => { const p = nearest(s.points, hover.x); if (!p) return; ctx.beginPath(); ctx.arc(sx(p.x), sy(p.y), 3.6, 0, Math.PI*2);
-          ctx.fillStyle = s.color; ctx.fill(); ctx.strokeStyle = "#0a0e1a"; ctx.lineWidth = 1.6; ctx.stroke(); }); }
+          ctx.fillStyle = s.color; ctx.fill(); ctx.strokeStyle = "#0d1117"; ctx.lineWidth = 1.6; ctx.stroke(); }); }
     }
     function nearest(pts, px) { if (!geom || !pts.length) return null;
       const tx = geom.minX + ((px - geom.plot.x) / geom.plot.w) * (geom.maxX - geom.minX);
