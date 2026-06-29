@@ -199,6 +199,7 @@
           <label class="fld">Metric <select id="metric"><option value="">All</option></select></label>
           <label class="switch"><input type="checkbox" id="live" checked /> Live</label>
           <button class="btn primary" id="export">Export CSV</button>
+          <button class="btn danger" id="clear">Clear data</button>
         </div>
         <div class="chart-area">
           <canvas id="chart"></canvas>
@@ -324,7 +325,7 @@
         const devList = dRes.ok ? await dRes.json() : [];
         const alertList = aRes.ok ? await aRes.json() : [];
         rows.forEach((d) => { devices.add(d.device_id); metrics.add(d.metric); });
-        syncSelect($("device"), devices); syncSelect($("metric"), metrics);
+        syncSelect($("device"), devices); syncMetricSelect($("metric"), metrics);
         buildSeries(); renderDevices(devList); renderAlerts(alertList); updateCards(devList, alertList);
         draw(); setStatus(true);
       } catch (e) { setStatus(false); }
@@ -333,6 +334,25 @@
       $("health").className = "dot " + (ok ? "live" : "bad"); }
     function syncSelect(sel, set) { const cur = sel.value; sel.innerHTML = '<option value="">All</option>';
       [...set].sort().forEach((v) => { const o = document.createElement("option"); o.value = o.textContent = v; sel.appendChild(o); }); sel.value = cur; }
+    // Metric dropdown, grouped by subsystem so it's readable.
+    function syncMetricSelect(sel, set) {
+      const cur = sel.value;
+      const groups = { "Battery (BMS)": [], "Motor (MMS)": [], "Temperature": [], "Other": [] };
+      [...set].sort().forEach((v) => {
+        if (v.startsWith("battery_temp")) groups["Temperature"].push(v);
+        else if (v.startsWith("bms_")) groups["Battery (BMS)"].push(v);
+        else if (v.startsWith("mms_")) groups["Motor (MMS)"].push(v);
+        else groups["Other"].push(v);
+      });
+      sel.innerHTML = '<option value="">All metrics</option>';
+      for (const [label, items] of Object.entries(groups)) {
+        if (!items.length) continue;
+        const og = document.createElement("optgroup"); og.label = label;
+        items.forEach((v) => { const o = document.createElement("option"); o.value = o.textContent = v; og.appendChild(o); });
+        sel.appendChild(og);
+      }
+      sel.value = cur;
+    }
     function buildSeries() {
       const g = {}; for (const d of rows) (g[`${d.device_id} · ${d.metric}`] ||= []).push({ x: d.ts, y: d.value });
       series = Object.keys(g).sort().map((k, i) => ({ key: k, color: PALETTE[i % PALETTE.length], points: g[k] }));
@@ -522,7 +542,13 @@ auto_init()`;
       const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([head + body], { type: "text/csv" }));
       a.download = "telemetry.csv"; a.click(); URL.revokeObjectURL(a.href);
     }
-    $("export").onclick = exportCSV; $("device").onchange = poll; $("metric").onchange = poll;
+    async function clearData() {
+      if (!confirm("Delete all stored telemetry and alerts? Live devices will repopulate.")) return;
+      const res = await fetch(`${API}/api/v1/telemetry`, { method: "DELETE" });
+      if (res.ok) { toast("Data cleared"); poll(); } else { toast("Could not clear"); }
+    }
+    $("export").onclick = exportCSV; $("clear").onclick = clearData;
+    $("device").onchange = poll; $("metric").onchange = poll;
     poll(); setInterval(() => { if ($("live").checked) poll(); }, 1500);
   </script>
 </body>

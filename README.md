@@ -218,14 +218,29 @@ stateDiagram-v2
 
 ```bash
 pip install -r requirements.txt
-python run.py     # starts the server + a simulated solar car, opens the portal
+```
+
+**Run the server only** (no simulator — use this with a real Pi, and it's exactly what the
+cloud runs):
+
+```bash
+uvicorn server.main:app --host 0.0.0.0 --port 8000
+```
+
+**Or run the all-in-one local demo** (server **+** a simulated solar car + opens the portal —
+for trying it out with no hardware):
+
+```bash
+python run.py
 ```
 
 - **Portal:** http://127.0.0.1:8000/ · **API docs (Swagger):** http://127.0.0.1:8000/docs
 - In the portal's **Setup** tab, generate an API key — it shows a ready-to-paste
   `auto_init()` snippet for the car. Full walkthrough: [docs/getting-started.md](docs/getting-started.md).
+- To run the server **publicly** (so a remote Pi can reach it), deploy it — see
+  [docs/deploy.md](docs/deploy.md).
 
-Resilience demo: stop and restart the server while `run.py` runs — the car keeps
+Resilience demo: while data is streaming, stop and restart the server — the car keeps
 buffering and drains the backlog **in order**, nothing lost.
 
 ## REST API

@@ -447,6 +447,24 @@ def revoke_key(key: str):
     return {"revoked": key}
 
 
+@app.delete("/api/v1/telemetry")
+def clear_telemetry(device: str | None = None):
+    """Delete stored telemetry and alerts (optionally for one device).
+
+    A demo/reset convenience — wipe the chart between video takes. Live devices
+    repopulate immediately. Rules and API keys are left intact. Like the other
+    management endpoints this is unauthenticated (local-tool scope).
+    """
+    with _connect() as conn:
+        if device is None:
+            n = conn.execute("DELETE FROM telemetry").rowcount
+            conn.execute("DELETE FROM alerts")
+        else:
+            n = conn.execute("DELETE FROM telemetry WHERE device_id = ?", (device,)).rowcount
+            conn.execute("DELETE FROM alerts WHERE device_id = ?", (device,))
+    return {"cleared": device or "all", "deleted_points": n}
+
+
 # --- dashboard (served from the same origin so it's a one-URL portal) -------
 
 @app.get("/", include_in_schema=False)

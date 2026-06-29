@@ -28,16 +28,30 @@ import time
 
 from ..client import track as _default_track
 
-# Decoded fields that are identifiers/flags, not telemetry worth charting.
-_SKIP_KEYS = {"temp_module", "bms_balance_mask"}
+# Fields that are identifiers, counters, codes, or duplicates — not telemetry
+# worth charting. Kept out so the dashboard stays a clean, meaningful set.
+_SKIP_KEYS = {
+    "temp_module", "bms_balance_mask",
+    "bms_string_count", "bms_ntc_count",          # static hardware specs
+    "bms_cycles", "bms_full_capacity_Ah",         # rarely-changing / spec
+    "bms_error_code", "mms_error_code", "mms_limit_code",  # bitmask codes, not series
+    "calculated_lap",                             # derived counter
+    "battery_temp_avg_C", "battery_temp_low_C",   # duplicate of battery_temp_C / less useful
+}
 
 
 def track_vehicle_state(vehicle_state: dict, client=None, ts: int | None = None) -> int:
-    """Hand every numeric signal in a `vehicle_state` dict to the SDK.
+    """Hand the meaningful numeric signals in a `vehicle_state` dict to the SDK.
 
     Walks each section (battery / motor / temp_controller / …) and calls
-    `track(name, value, ts)` for every int/float leaf. Booleans, strings, and
-    lists (e.g. `bms_protections`) are skipped — `track()` carries numeric values.
+    `track(name, value, ts)` for each chartable numeric signal. To keep the
+    dashboard readable it does two clean-ups:
+
+      * the 30+ per-cell voltages (`bms_cell_01_V` …) are collapsed into a
+        compact **min / max / spread** summary — the numbers that actually
+        indicate pack health — instead of 30 separate series;
+      * identifiers, counters, bitmask codes, and duplicate fields are skipped
+        (see `_SKIP_KEYS`). Booleans and lists are skipped too.
 
     Pass `ts` (the car's snapshot timestamp, epoch ms) so every signal in one
     decoded frame shares the same device time — that's what keeps the history
@@ -52,8 +66,19 @@ def track_vehicle_state(vehicle_state: dict, client=None, ts: int | None = None)
     for section, signals in vehicle_state.items():
         if not isinstance(signals, dict):
             continue
+
+        # Collapse per-cell voltages (bms_cell_01_V …) into a 3-number summary.
+        cells = [v for k, v in signals.items()
+                 if k.startswith("bms_cell_") and isinstance(v, (int, float))
+                 and not isinstance(v, bool)]
+        if cells:
+            track("bms_cell_min_V", round(min(cells), 3), ts)
+            track("bms_cell_max_V", round(max(cells), 3), ts)
+            track("bms_cell_spread_V", round(max(cells) - min(cells), 3), ts)
+            n += 3
+
         for name, value in signals.items():
-            if name in _SKIP_KEYS or isinstance(value, bool):
+            if name.startswith("bms_cell_") or name in _SKIP_KEYS or isinstance(value, bool):
                 continue
             if isinstance(value, (int, float)):
                 track(name, float(value), ts)

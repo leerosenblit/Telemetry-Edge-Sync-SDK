@@ -11,11 +11,20 @@ portal use FastAPI + uvicorn (already in `requirements.txt`).
 
 ## 2. Run the server + portal
 
+**Server only** (no simulator — for a real Pi, and what the cloud runs):
+
+```bash
+uvicorn server.main:app --host 0.0.0.0 --port 8000
+```
+
+**Or the all-in-one local demo** (server **+** a simulated solar car, opens a browser — no
+hardware needed):
+
 ```bash
 python run.py
 ```
 
-This launches the REST server **and** a simulated solar car, then opens the portal:
+Either way:
 
 - **Portal:** http://127.0.0.1:8000/
 - **API reference (Swagger):** http://127.0.0.1:8000/docs

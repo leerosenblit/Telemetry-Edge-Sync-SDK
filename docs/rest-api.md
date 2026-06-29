@@ -41,6 +41,14 @@ GET /api/v1/metrics?device=solar-car-01&metric=battery_temp_C
 Per-device health. Response: array of
 `{ device_id, points, last_device_ts, last_received_ts, metadata }`.
 
+## `DELETE /api/v1/telemetry`
+
+Delete stored telemetry **and** alerts — a demo/reset convenience (the portal's
+**Clear data** button calls this). Optional `?device=` to scope to one device;
+otherwise clears everything. Rules and API keys are left intact, and live devices
+repopulate immediately. Response: `{ cleared, deleted_points }`. Unauthenticated
+(local-tool scope).
+
 ## `GET /api/v1/alerts`
 
 Recent alerts, newest first. Query params: `device` (optional), `limit` (default 50).
