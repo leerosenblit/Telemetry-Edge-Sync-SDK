@@ -38,10 +38,6 @@ the pit crew writes **zero**.
 
 ## Screenshots
 
-> Capture from a running portal (`python run.py`). See
-> [docs/media/SHOTLIST.md](docs/media/SHOTLIST.md) for the exact shots; drop the PNGs in
-> `docs/media/` and these render.
-
 | Overview (live charts) | Alerts | Rules editor |
 |---|---|---|
 | ![Overview](docs/media/overview.png) | ![Alerts](docs/media/alerts.png) | ![Rules](docs/media/rules.png) |
