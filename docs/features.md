@@ -15,7 +15,7 @@
 | **API keys** | Generate / revoke keys in the dashboard; ingestion validates against them. | `server/main.py` |
 | **Auto Init** | `auto_init()` configures the SDK from a config file or `TELEMETRY_*` env vars. | `sdk/client.py` |
 | **Pit-wall portal** | Live charts, device health, alerts, rules, device setup — one page, no build step, no CDN. | `dashboard/index.html` |
-| **Own backend** | Plain REST to your server (not Firebase): no vendor lock-in, no service-account key on the car. | `server/main.py` |
+| **Own backend** | Plain REST to your server: no vendor lock-in, no cloud credentials on the car. | `server/main.py` |
 | **SolarRace-OS bridge** | One call hands the Pi's decoded `vehicle_state` to the SDK. | `sdk/integrations/solar_race.py` |
 | **Off-car simulator** | Realistic solar-car telemetry with no hardware, for demos and tests. | `sdk/integrations/solar_race.py` |
 

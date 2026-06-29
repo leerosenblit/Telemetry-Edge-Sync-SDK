@@ -83,16 +83,16 @@ to share a network with your laptop, because the server is public):
    from sdk.client import auto_init
    from sdk.integrations.solar_race import track_vehicle_state
 
-   # in main(), right after initialize_firebase(...):
+   # once, at startup:
    auto_init(os.path.join(os.path.dirname(__file__), "telemetry.json"))
 
-   # in _decode_message(), right after push_telemetry_to_cloud(self.vehicle_state):
+   # in _decode_message(), after the parsers fill self.vehicle_state:
    track_vehicle_state(self.vehicle_state)
    ```
    (The absolute path means `telemetry.json` is found no matter which folder you launch from.)
 4. **Run SolarRace_OS** the way you normally do — live CAN, or its `can_dump.txt` replay mode
-   if the car isn't powered. It now sends to the cloud in parallel with its existing push.
-   Real BMS / motor / battery-temp values appear on the portal from anywhere.
+   if the car isn't powered. It now streams the decoded telemetry to your server, and the
+   real BMS / motor / battery-temp values appear on the portal from anywhere.
 
 > Env-var alternative: instead of `telemetry.json` you can `export TELEMETRY_SERVER_URL`,
 > `TELEMETRY_API_KEY`, `TELEMETRY_DEVICE_ID`, `TELEMETRY_NETWORK` and call a bare `auto_init()`.

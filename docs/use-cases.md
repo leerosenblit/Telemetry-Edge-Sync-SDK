@@ -20,13 +20,13 @@ post-race analysis are based on complete, correctly-ordered data.
   dropout; the alert engine fires as soon as the buffered breach arrives.
 - **Analysis** — a gap-free, chronologically-correct history after the race.
 
-## How it replaces the previous setup
+## Why on-device buffering matters
 
-The car previously pushed telemetry **straight to a cloud database, fire-and-forget**.
-That handles the *pit-side* reconnect but not the *car-side* outage: when the car itself
-has no signal, there is nothing to push to, and the samples are lost. The SDK adds the
-missing **on-device durability** and removes the third-party-backend dependency by syncing
-to your own REST server.
+A naive "push straight to the cloud" only works while the car has signal — when the
+*car itself* drops (tunnel, weak coverage), there is nothing to push to and those samples
+are lost. The SDK fixes that at the source: it buffers to the car's own disk **first**, then
+syncs to your REST server in order once the link returns — so a car-side outage loses
+nothing.
 
 ## Beyond the car
 

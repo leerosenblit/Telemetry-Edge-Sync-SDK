@@ -165,10 +165,10 @@ CREATE TABLE telemetry (
    correctly, with no time distortion in the graphs.
 
 5. **REST as the boundary = our own backend, no lock-in.** Because the SDK speaks plain
-   HTTP rather than a proprietary backend SDK (the car previously pushed straight to
-   Firebase), the car syncs to *our* server — no third-party dependency or service-account
-   key on the car, and the backend can change without touching the car. The REST contract
-   is the clean boundary between the car and whatever stores its telemetry.
+   HTTP rather than a proprietary backend SDK, the car syncs to *our* server — no
+   third-party dependency or cloud credentials on the car, and the backend can change
+   without touching the car. The REST contract is the clean boundary between the car and
+   whatever stores its telemetry.
 
 ---
 

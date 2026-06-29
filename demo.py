@@ -1,9 +1,9 @@
 """Minimal integration example — how SolarRace-OS feeds the SDK.
 
 This mirrors what you'd add to the Pi's main loop: initialise the SDK once, then
-hand each decoded `vehicle_state` to `track_vehicle_state()` instead of pushing
-it fire-and-forget. Run the server first (`uvicorn server.main:app` or
-`python run.py` in another terminal), then `python demo.py`.
+hand each decoded `vehicle_state` to `track_vehicle_state()`. Run the server
+first (`uvicorn server.main:app` or `python run.py` in another terminal), then
+`python demo.py`.
 
 It builds a couple of sample `vehicle_state` snapshots by hand so you can see the
 exact integration without any CAN hardware.

@@ -1,16 +1,14 @@
 """SolarRace-OS integration for the Edge-Sync SDK.
 
-The solar car's Raspberry Pi already reads the CAN bus and decodes it into a
-nested `vehicle_state` dict (BMS / motor controller / battery-temp controller),
-which today is pushed straight to the cloud fire-and-forget — so a network
-dropout silently loses data.
+The solar car's Raspberry Pi reads the CAN bus and decodes it into a nested
+`vehicle_state` dict (BMS / motor controller / battery-temp controller).
 
-This module is the resilient drop-in replacement. `track_vehicle_state()` takes
-that exact dict and hands every numeric signal to the SDK via `track()`, which
-buffers it durably, batches it, and syncs it to the REST server in order even
-across dropouts. No CAN decoding happens here — the Pi already did it.
+`track_vehicle_state()` takes that dict and hands every meaningful numeric signal
+to the SDK via `track()`, which buffers it durably, batches it, and syncs it to
+the REST server in order even across network dropouts. No CAN decoding happens
+here — the Pi already did it.
 
-    # in your main loop, instead of (or alongside) the cloud push:
+    # in your main loop, once you have a decoded vehicle_state:
     from sdk.client import init
     from sdk.integrations.solar_race import track_vehicle_state
 

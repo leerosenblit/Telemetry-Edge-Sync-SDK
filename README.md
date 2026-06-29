@@ -33,8 +33,8 @@ the pit crew writes **zero**.
 - **API keys** — generate/revoke keys from the dashboard; the SDK can `auto_init()` from
   config or environment.
 - **Pit-wall portal** — live charts, device health, alerts, rules editor, device setup.
-- **No third-party backend** — plain REST to your own server (not Firebase), no vendor
-  lock-in or service-account key on the car.
+- **Your own backend** — plain REST to your own server, no vendor lock-in and no cloud
+  credentials on the car.
 
 ## Screenshots
 
