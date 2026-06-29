@@ -52,7 +52,7 @@ the pit crew writes **zero**.
 
 ## Video
 
-▶ **[Watch the demo walkthrough (58 s)](https://github.com/leerosenblit/Telemetry-Edge-Sync-SDK/issues/1)** — storyboard in [docs/media/SHOTLIST.md](docs/media/SHOTLIST.md).
+▶ **[Watch the demo walkthrough (58 s)](https://github.com/leerosenblit/Telemetry-Edge-Sync-SDK/issues/1)** 
 
 <!-- To embed an inline PLAYER instead of a link: in issue #1, right-click the video ->
      "Copy link address" to get its asset URL (https://github.com/.../assets/.../….mp4),
