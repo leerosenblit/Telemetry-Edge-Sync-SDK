@@ -1,6 +1,6 @@
 """One-command launcher for the demo.
 
-    python run.py
+    python scripts/run.py
 
 Starts the REST server and a *simulated* solar car (a SolarRace-OS-shaped
 telemetry stream — BMS / motor / battery-temp signals) flowing through the SDK,
@@ -9,14 +9,19 @@ then opens the portal:
     http://127.0.0.1:8000/
 
 On the real car the Raspberry Pi feeds live decoded telemetry instead (see the
-README, "Integrating with SolarRace OS"); here we simulate it so the whole
-pipeline and dashboard run with no hardware. Stop/restart the server mid-run to
-watch the backlog buffer and drain in order — the resilience demo. Ctrl+C ends.
+docs); here we simulate it so the whole pipeline and dashboard run with no
+hardware. Stop/restart the server mid-run to watch the backlog buffer and drain
+in order — the resilience demo. Ctrl+C ends.
 """
 
+import os
+import sys
 import threading
 import time
 import webbrowser
+
+# Make the repo root importable when run as `python scripts/run.py`.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import uvicorn
 

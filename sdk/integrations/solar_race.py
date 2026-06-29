@@ -86,7 +86,7 @@ def track_vehicle_state(vehicle_state: dict, client=None, ts: int | None = None)
 
 class SimulatedSolarCar:
     """Off-car simulator: produces a SolarRace-OS-shaped `vehicle_state` and
-    feeds it through `track_vehicle_state()`, so `python run.py` on a laptop
+    feeds it through `track_vehicle_state()`, so `python scripts/run.py` on a laptop
     looks like the real car. Several signals are tuned to cross the server's
     alert thresholds so the Alerts panel has something to show.
     """

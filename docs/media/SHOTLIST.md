@@ -6,7 +6,7 @@ drop the PNGs here with the **exact filenames** below, and the placeholders reso
 ## Setup before capturing
 
 ```bash
-python run.py
+python scripts/run.py
 ```
 Open http://127.0.0.1:8000/ and let it run ~60 s so the charts fill and a few alerts fire.
 

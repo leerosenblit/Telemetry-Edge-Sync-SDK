@@ -128,7 +128,7 @@ n = track_vehicle_state(self.vehicle_state, ts=snapshot_ts_ms)
 ### `class SimulatedSolarCar(client, hz=5.0)`
 
 Off-car simulator: generates a realistic `vehicle_state` and feeds it through
-`track_vehicle_state()` at `hz` Hz. Used by `run.py` so the demo works with no hardware.
+`track_vehicle_state()` at `hz` Hz. Used by `scripts/run.py` so the demo works with no hardware.
 
 ```python
 from sdk.client import Client

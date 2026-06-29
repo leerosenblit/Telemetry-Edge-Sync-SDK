@@ -409,7 +409,7 @@ def delete_rule(rule_id: int):
 # --- API keys ---------------------------------------------------------------
 # Issued and revoked from the dashboard's Setup tab; the car puts its key in the
 # X-API-Key header (or via auto_init). Like the rules CRUD, these endpoints are
-# unauthenticated for this local-tool scope (see FUTURE_WORK.md).
+# unauthenticated for this local-tool scope (see docs/future-work.md).
 
 class KeyIn(BaseModel):
     label: str = "device"

@@ -208,4 +208,4 @@ in the write-up:
 Implemented stretch goals (on-theme for a cellular course): a network-aware sync policy
 (adapt batch size and frequency to link type and battery) and a server-side alert rule
 engine (threshold rules over the car's signals, editable from the pit dashboard).
-See FUTURE_WORK.md for the full implemented-vs-deferred breakdown.
+See future-work.md for the full implemented-vs-deferred breakdown.

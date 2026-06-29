@@ -21,6 +21,9 @@ the docs **permalink** (e.g. `https://github.com/<you>/<repo>/tree/main/docs`).
 8. [Implementation](implementation.md) — how the guarantee is delivered.
 9. [REST API](rest-api.md) — endpoint reference.
 10. [Diagrams](diagrams.md) — architecture, ERD, sequence, state.
+11. [Architecture](architecture.md) — full design and key decisions.
+12. [Deploying to the cloud](deploy.md) — run the server publicly for a remote Pi.
+13. [Future work](future-work.md) — what's deferred and why.
 
 ## Example docs we model after
 

@@ -21,7 +21,7 @@ uvicorn server.main:app --host 0.0.0.0 --port 8000
 hardware needed):
 
 ```bash
-python run.py
+python scripts/run.py
 ```
 
 Either way:
@@ -76,7 +76,7 @@ second or two. **Devices** shows the car's health; **Alerts** shows any threshol
 
 ## 6. Try the resilience demo
 
-While `run.py` is running, **stop the server** (Ctrl+C) for a few seconds, then start it
+While `scripts/run.py` is running, **stop the server** (Ctrl+C) for a few seconds, then start it
 again. The car keeps buffering during the outage and drains the backlog **in order** when
 the server returns — nothing is lost. That is the core guarantee, live.
 

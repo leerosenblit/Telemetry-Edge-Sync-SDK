@@ -2,14 +2,19 @@
 
 This mirrors what you'd add to the Pi's main loop: initialise the SDK once, then
 hand each decoded `vehicle_state` to `track_vehicle_state()`. Run the server
-first (`uvicorn server.main:app` or `python run.py` in another terminal), then
-`python demo.py`.
+first (`uvicorn server.main:app` or `python scripts/run.py` in another terminal),
+then `python examples/demo.py`.
 
 It builds a couple of sample `vehicle_state` snapshots by hand so you can see the
 exact integration without any CAN hardware.
 """
 
+import os
+import sys
 import time
+
+# Make the repo root importable when run as `python examples/demo.py`.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from sdk.client import init, force_flush
 from sdk.integrations.solar_race import track_vehicle_state

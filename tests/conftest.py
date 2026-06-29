@@ -1,14 +1,15 @@
 """Shared test fixtures and helpers.
 
 Also ensures the project root is importable so `sdk` and `server` resolve as
-packages when tests run from anywhere.
+packages when the suite runs (this conftest lives in tests/, so the root is its
+parent directory).
 """
 
 import importlib
 import os
 import sys
 
-sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pytest
 from fastapi.testclient import TestClient

@@ -80,4 +80,4 @@ Pit engineer            Dashboard (Setup tab)        Car's Raspberry Pi
 
 > **Scope note:** key-management endpoints are unauthenticated in this build (local-tool
 > scope), the same as the rules editor. Putting the key endpoints behind admin auth is
-> listed in [../FUTURE_WORK.md](../FUTURE_WORK.md).
+> listed in [future-work.md](future-work.md).

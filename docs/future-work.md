@@ -1,7 +1,7 @@
 # Future Work & Scope
 
 This project deliberately implements the **defensible core** of the
-Telemetry & Edge-Sync vision (see the pitch deck and `ARCHITECTURE.md`) and
+Telemetry & Edge-Sync vision (see the pitch deck and `architecture.md`) and
 defers the heavy production infrastructure. This document maps every feature
 from the vision to its status, so the scope is explicit and the deferred items
 are framed as intentional future work — not gaps.
@@ -27,7 +27,7 @@ duplicates* — then stop before the build becomes unfinishable solo.
 | Server-side alert rule engine (threshold rules) | `server/main.py` |
 | Network-aware sync policy (batch/interval by link + battery) | `sdk/sync_policy.py` |
 | SolarRace-OS integration bridge (`vehicle_state` → `track()`) | `sdk/integrations/solar_race.py` |
-| Off-car solar-car simulator (for testing without hardware) | `sdk/integrations/solar_race.py`, `run.py` |
+| Off-car solar-car simulator (for testing without hardware) | `sdk/integrations/solar_race.py`, `scripts/run.py` |
 | Alert rules editor in the portal (add/enable/disable/delete, live) | `server/main.py`, `dashboard/index.html` |
 | Management portal: live charts, device status, alerts, rules | `dashboard/index.html` |
 | No-loss / idempotency / recovery / policy / bridge tests | `tests/` |

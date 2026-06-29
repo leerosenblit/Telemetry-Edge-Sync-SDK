@@ -227,7 +227,7 @@ uvicorn server.main:app --host 0.0.0.0 --port 8000
 for trying it out with no hardware):
 
 ```bash
-python run.py
+python scripts/run.py
 ```
 
 - **Portal:** http://127.0.0.1:8000/ · **API docs (Swagger):** http://127.0.0.1:8000/docs
@@ -274,9 +274,12 @@ sdk/              edge SDK: client (queue→batch→retry), durable queue, sync 
   integrations/   solar-car bridge — solar_race.py (vehicle_state → track) + simulator
 server/           FastAPI REST API + alert rule engine + API keys, serves the portal
 dashboard/        single-page command-center portal (no build step, no CDN)
-docs/             the documentation set (this is the deliverable docs)
-tests/            no-loss, idempotency, crash-recovery, alerts, sync-policy, bridge, keys, auto-init
-run.py            one-command launcher: server + simulated solar car + browser
+docs/             the documentation set (architecture, deploy, API reference, diagrams, …)
+examples/         runnable demo.py + the telemetry.json config template
+scripts/          run.py — one-command launcher (server + simulated solar car)
+tests/            test suite + shared conftest fixtures
+pyproject.toml · requirements.txt        project config + dependencies
+Procfile · render.yaml · runtime.txt     cloud-deploy config (Render)
 ```
 
 ## Testing
@@ -291,6 +294,6 @@ network-aware sync policy, API-key validation, and `auto_init`.
 
 ## Design & scope
 
-- [ARCHITECTURE.md](ARCHITECTURE.md) — full design and key engineering decisions.
-- [FUTURE_WORK.md](FUTURE_WORK.md) — what's deferred (TSDB, message broker, Protobuf,
+- [docs/architecture.md](docs/architecture.md) — full design and key engineering decisions.
+- [docs/future-work.md](docs/future-work.md) — what's deferred (TSDB, message broker, Protobuf,
   WebSocket push, multi-car fleet) and why, with the path to add each.

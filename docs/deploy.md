@@ -17,7 +17,7 @@ from GitHub). The same `Procfile` works on Railway/Fly.io too.
   a single recording session. (For persistence you'd add a Render Postgres or a paid disk —
   out of scope for the seminar.)
 - **Open endpoints:** ingestion needs the API key, but read/rules/keys endpoints are
-  unauthenticated (local-tool scope, see [../FUTURE_WORK.md](../FUTURE_WORK.md)). A public
+  unauthenticated (local-tool scope, see [future-work.md](future-work.md)). A public
   URL is therefore readable by anyone who has it. Acceptable for a short demo; don't put
   anything sensitive on it.
 

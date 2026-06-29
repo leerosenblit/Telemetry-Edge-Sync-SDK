@@ -32,3 +32,7 @@ Thumbs.db
 # Reference context only — not part of the SDK, never commit
 SolarRace_OS/
 Pit_Dashboard/
+
+# Local assistant project-notes — kept on disk, not published
+CLAUDE.md
+claude.md
