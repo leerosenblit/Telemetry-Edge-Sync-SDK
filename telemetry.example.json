@@ -1,0 +1,7 @@
+{
+  "server_url": "https://your-app.onrender.com",
+  "api_key": "PASTE_THE_KEY_YOU_SET_ON_RENDER",
+  "device_id": "solar-car-01",
+  "network": "lte",
+  "metadata": { "fw": "RaceOS-2.0", "type": "solar-car" }
+}

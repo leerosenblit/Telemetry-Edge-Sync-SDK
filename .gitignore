@@ -20,6 +20,9 @@ __pycache__/
 # Dashboard CSV exports
 telemetry.csv
 
+# Real SDK config with a live API key (keep telemetry.example.json as the template)
+telemetry.json
+
 # Editor / OS noise
 .vscode/
 .idea/

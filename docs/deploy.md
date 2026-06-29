@@ -57,33 +57,55 @@ prefer the env-var key from Step 2 — generated keys don't survive a free-tier 
 
 ## Step 4 — Point the Pi at the cloud
 
-On the Raspberry Pi running `SolarRace_OS`:
+On the Raspberry Pi running `SolarRace_OS` (the Pi just needs internet — it does **not** have
+to share a network with your laptop, because the server is public):
 
-1. Put the SDK on the Pi — copy the `sdk/` folder into the SolarRace_OS project (it isn't on
-   PyPI yet), and install its one dependency:
+1. **Put the SDK on the Pi.** Copy the `sdk/` folder into the SolarRace_OS project root — the
+   same level as `modules/` and `main.py`, so `import sdk` resolves just like `import modules`
+   already does. Install its one dependency:
    ```bash
-   pip install httpx
+   pip3 install httpx
    ```
-2. Provide the connection via environment variables (or a `telemetry.json`):
-   ```bash
-   export TELEMETRY_SERVER_URL="https://edge-sync-telemetry.onrender.com"
-   export TELEMETRY_API_KEY="<the key from Step 2>"
-   export TELEMETRY_DEVICE_ID="solar-car-01"
-   export TELEMETRY_NETWORK="lte"
+2. **Create `telemetry.json`** in the SolarRace_OS root (next to `main.py`):
+   ```json
+   {
+     "server_url": "https://edge-sync-telemetry.onrender.com",
+     "api_key": "<the key you set on Render in Step 2>",
+     "device_id": "solar-car-01",
+     "network": "lte",
+     "metadata": { "fw": "RaceOS-2.0", "type": "solar-car" }
+   }
    ```
-3. Add the SDK to `main.py` — initialise once, and hand each decoded snapshot to the SDK
-   right where it already pushes to the cloud:
+3. **Edit `main.py`** — three small additions:
    ```python
+   # with the other imports at the top:
+   import os
    from sdk.client import auto_init
    from sdk.integrations.solar_race import track_vehicle_state
 
-   auto_init()                              # reads the env vars above
+   # in main(), right after initialize_firebase(...):
+   auto_init(os.path.join(os.path.dirname(__file__), "telemetry.json"))
 
-   # inside _decode_message(), beside push_telemetry_to_cloud(self.vehicle_state):
+   # in _decode_message(), right after push_telemetry_to_cloud(self.vehicle_state):
    track_vehicle_state(self.vehicle_state)
    ```
-4. Run SolarRace_OS (live CAN, or its `can_dump.txt` replay mode). Real BMS / motor /
-   battery-temp values now appear on the portal from anywhere.
+   (The absolute path means `telemetry.json` is found no matter which folder you launch from.)
+4. **Run SolarRace_OS** the way you normally do — live CAN, or its `can_dump.txt` replay mode
+   if the car isn't powered. It now sends to the cloud in parallel with its existing push.
+   Real BMS / motor / battery-temp values appear on the portal from anywhere.
+
+> Env-var alternative: instead of `telemetry.json` you can `export TELEMETRY_SERVER_URL`,
+> `TELEMETRY_API_KEY`, `TELEMETRY_DEVICE_ID`, `TELEMETRY_NETWORK` and call a bare `auto_init()`.
+> The config file is steadier across reboots and launch methods.
+
+### Troubleshooting
+
+- **`ModuleNotFoundError: sdk`** — the `sdk/` folder isn't beside `main.py`; move it there.
+- **`401` in the Pi logs / no data** — the key doesn't match Render's current `TELEMETRY_API_KEY`.
+- **`telemetry.json` not found** — the `os.path.dirname(__file__)` path (Step 3) fixes this;
+  confirm the file sits next to `main.py`.
+- **Nothing appears, no error** — free-tier server cold-starting (wait ~30–60 s, refresh), or
+  the Pi has no internet.
 
 ## Step 5 — Record the video
 
