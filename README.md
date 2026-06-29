@@ -38,14 +38,22 @@ the pit crew writes **zero**.
 
 ## Screenshots
 
-| Overview (live charts) | Alerts | Rules editor |
-|---|---|---|
-| ![Overview](docs/media/overview.png) | ![Alerts](docs/media/alerts.png) | ![Rules](docs/media/rules.png) |
+**Overview — live charts**
+
+![Overview](docs/media/overview.png)
+
+**Alerts**
+
+![Alerts](docs/media/alerts.png)
+
+**Rules editor**
+
+![Rules](docs/media/rules.png)
 
 ## Video
 
-> Demo walkthrough (≈75 s) — storyboard in [docs/media/SHOTLIST.md](docs/media/SHOTLIST.md).
-> Add the link here once recorded: **[▶ Demo video](#)** *(placeholder)*
+▶https://github.com/leerosenblit/Telemetry-Edge-Sync-SDK/issues/1#issue-4769401219
+
 
 ---
 
