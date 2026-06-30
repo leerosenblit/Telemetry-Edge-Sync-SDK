@@ -1,21 +1,28 @@
 # Telemetry & Edge-Sync SDK
 
-> Resilient telemetry for the **Raspberry Pi on a solar race car** — buffer locally,
-> sync reliably across network dropouts, in correct time order, with no duplicates.
+> A resilient telemetry & edge-sync SDK for the **Raspberry Pi** — buffer sensor data
+> locally, sync it reliably across network dropouts, in correct time order, with no
+> duplicates. Works with **any sensors**; ships with a solar-race-car integration as a
+> real, proven example.
 
 ## Description
 
-A solar race car generates a constant stream of telemetry (battery management system,
-motor controller, battery-temperature controller) on a Raspberry Pi. The car drives
-through tunnels, behind grandstands, and across long circuits where the cellular link
-drops. A naive "push to the cloud" loses every sample sent during an outage.
+Lots of Raspberry Pi projects stream sensor data over a flaky link — a field weather
+station, a robot, an environmental or industrial monitor, or a solar race car threading
+through tunnels and dead zones. A naive "push to the cloud" loses every sample sent
+during an outage.
 
-This SDK is the fix. On the car it **buffers telemetry to a local SQLite queue first**,
-batches it, and syncs it to a REST server — surviving network dropouts *and* reboots.
-The pit wall watches a live web portal. The car's software integrates in **three lines**;
-the pit crew writes **zero**.
+This SDK is the fix. On the device it **buffers telemetry to a local SQLite queue
+first**, batches it, and syncs it to a REST server — surviving network dropouts *and*
+reboots. A web portal visualizes it live. Your code integrates in **three lines**
+(`init` / `track` / `force_flush`); whoever watches the dashboard writes **zero**.
 
-> **The one guarantee:** no data is lost when the car loses signal, and it arrives in
+The pipeline is **sensor-agnostic** — it only moves `metric / value / timestamp`. Two
+ready integrations show the range: a hardware-free **Raspberry Pi system-metrics** one
+that runs on any Pi out of the box, and the **flagship solar race car** (BMS / motor /
+battery-temp decoded from CAN).
+
+> **The one guarantee:** no data is lost when the device loses signal, and it arrives in
 > correct chronological order, with no duplicates.
 
 ## Features
@@ -28,7 +35,7 @@ the pit crew writes **zero**.
 - **Ordered, idempotent ingestion** — points carry a client-assigned id; the server
   upserts on it, so retries never duplicate. Stored by **device time**, not arrival time.
 - **Network-aware sync policy** — batch size & frequency adapt to link type and battery.
-- **Server-side alert rule engine** — threshold rules over the car's signals, editable
+- **Server-side alert rule engine** — threshold rules over your signals, editable
   live from the portal.
 - **API keys** — generate/revoke keys from the dashboard; the SDK can `auto_init()` from
   config or environment.
@@ -125,10 +132,20 @@ What the car's software calls. Full reference + examples in
 
 ```python
 from sdk.client import init, track, force_flush
-init("https://telemetry.example.com", api_key="<key>", device_id="solar-car-01")
-track("battery_temp_C", 46.2)
+init("https://your-server.example.com", api_key="<key>", device_id="pi-01")
+track("cpu_temp_C", 54.2)      # any metric — a sensor reading, a system stat, …
 force_flush()
 ```
+
+### Integrations
+
+Device-specific bridges live in `sdk/integrations/` — write a small one for your
+project, or just call `track()` directly. Two ship with the SDK:
+
+| Integration | What it does |
+|---|---|
+| `raspberry_pi` | Streams the Pi's own system metrics (CPU temp, load, memory, uptime) — **no hardware needed**, runs on any Pi. |
+| `solar_race` (flagship) | Hands a solar car's decoded `vehicle_state` (BMS / motor / battery-temp) to the SDK in one call. |
 
 ## Internal functions
 
@@ -243,11 +260,13 @@ python scripts/run.py
 
 - **Portal:** http://127.0.0.1:8000/ · **API docs (Swagger):** http://127.0.0.1:8000/docs
 - In the portal's **Setup** tab, generate an API key — it shows a ready-to-paste
-  `auto_init()` snippet for the car. Full walkthrough: [docs/getting-started.md](docs/getting-started.md).
+  `auto_init()` snippet for your device. Full walkthrough: [docs/getting-started.md](docs/getting-started.md).
+- **On a real Pi**, stream its own system metrics (no hardware) with
+  `python examples/pi_metrics.py`, or wire your sensors with three `track()` calls.
 - To run the server **publicly** (so a remote Pi can reach it), deploy it — see
   [docs/deploy.md](docs/deploy.md).
 
-Resilience demo: while data is streaming, stop and restart the server — the car keeps
+Resilience demo: while data is streaming, stop and restart the server — the device keeps
 buffering and drains the backlog **in order**, nothing lost.
 
 ## REST API
@@ -282,11 +301,11 @@ the included [`render.yaml`](render.yaml) / [`Procfile`](Procfile) — full walk
 
 ```
 sdk/              edge SDK: client (queue→batch→retry), durable queue, sync policy, auto_init
-  integrations/   solar-car bridge — solar_race.py (vehicle_state → track) + simulator
+  integrations/   device bridges — raspberry_pi.py (system metrics) + solar_race.py (flagship)
 server/           FastAPI REST API + alert rule engine + API keys, serves the portal
 dashboard/        single-page command-center portal (no build step, no CDN)
 docs/             the documentation set (architecture, deploy, API reference, diagrams, …)
-examples/         runnable demo.py + the telemetry.json config template
+examples/         runnable demo.py + pi_metrics.py + the telemetry.json config template
 scripts/          run.py — one-command launcher (server + simulated solar car)
 tests/            test suite + shared conftest fixtures
 pyproject.toml · requirements.txt        project config + dependencies

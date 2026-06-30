@@ -108,6 +108,32 @@ sdk.set_link(network="offline")            # buffer only, don't even try to send
 
 ---
 
+## Integrations
+
+Device-specific bridges live in `sdk.integrations`. Two ship with the SDK; for your own
+device, write a small one like these — or just call `track()` directly.
+
+### Raspberry Pi system metrics (`sdk.integrations.raspberry_pi`)
+
+A hardware-free integration: reads the Pi's own health (CPU temperature, load, memory,
+uptime) and streams it. Runs on any Pi with no extra sensors.
+
+| Function / class | Purpose |
+|---|---|
+| `read_system_metrics() -> dict` | The metrics available on this host (skips anything unavailable). |
+| `track_system_metrics(client=None, ts=None) -> int` | Read them and `track()` each; returns the count. |
+| `SystemMonitor(client, hz=1.0)` | Background thread that streams the metrics at `hz` (`.start()` / `.stop()`). |
+
+```python
+from sdk.client import auto_init
+from sdk.integrations.raspberry_pi import SystemMonitor
+
+auto_init()
+SystemMonitor(client=None, hz=1).start()   # cpu_temp_C, cpu_load_1m, mem_used_percent, …
+```
+
+### Solar race car (`sdk.integrations.solar_race`) — flagship
+
 ## `track_vehicle_state(vehicle_state, client=None, ts=None) -> int`
 
 (From `sdk.integrations.solar_race`.) Hand a SolarRace-OS `vehicle_state` dict to the SDK:

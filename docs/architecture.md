@@ -1,10 +1,12 @@
 # Telemetry & Edge-Sync SDK — Architecture
 
-A resilient telemetry SDK for the Raspberry Pi on a solar race car (Python, Linux). It
-buffers the car's telemetry — BMS, motor controller (MMS), and battery-temperature
-controller — locally, batches it, and syncs it to a REST server reliably even across
-network dropouts (tunnels, the far side of the track, weak cell coverage). It speaks
-plain REST, so it syncs to our own server rather than a locked-in third-party backend.
+A resilient telemetry SDK for the Raspberry Pi (Python, Linux). It buffers a device's
+sensor telemetry locally, batches it, and syncs it to a REST server reliably even across
+network dropouts (tunnels, dead zones, weak coverage). The pipeline is sensor-agnostic;
+device specifics live in small integrations — a hardware-free Raspberry Pi system-metrics
+one, and the flagship **solar race car** (BMS / motor / battery-temp decoded from CAN),
+which is used as the running example below. It speaks plain REST, so it syncs to our own
+server rather than a locked-in third-party backend.
 
 ---
 
